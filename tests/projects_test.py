@@ -1,5 +1,6 @@
 import requests
 
+from delete_records import delete_test_records
 from tests.auth_test import TestUser, get_tester_user_authorized_for_other_test
 
 test_project_name_local = 'This is autotest generated project'
@@ -18,7 +19,7 @@ def projects_delete_project_test(test_user, test_project) -> bool:
     response = {}
     try:
         project_delete_info = requests.delete(f'http://173.212.214.70:3004/projects/delete/{test_project.id}',
-                                         headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)})
+                                              headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)})
         response = project_delete_info.json()
         if 'success' in response:
             if response['success'] is True:
@@ -39,7 +40,7 @@ def projects_update_project_test(test_user, test_project, new_name, new_descript
     response = {}
     try:
         project_new_info = requests.put(f'http://173.212.214.70:3004/projects/update/{test_project.id}',
-                                         headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)},
+                                        headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)},
                                         data={
                                             'name': new_name,
                                             'description': new_description
@@ -67,13 +68,13 @@ def projects_get_by_id_test(test_user: TestUser, test_project: Project) -> bool:
     response = {}
     try:
         project_info = requests.get(f'http://173.212.214.70:3004/projects/{test_project.id}',
-                                         headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)})
+                                    headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)})
         response = project_info.json()
         if 'name' in response and 'description' in response and '_id' in response:
             if response['name'] == test_project.name \
                     and response['description'] == test_project.description \
                     and response['_id'] == test_project.id:
-                print('Test project successfully receieved by ID.')
+                print('Test project successfully received by ID.')
                 return True
             else:
                 raise 'Wrong record received.'
@@ -89,9 +90,9 @@ def projects_create_project_test(test_user: TestUser, test_project: Project) -> 
     response = {}
     try:
         new_project_request = requests.post('http://173.212.214.70:3004/projects/create',
-                                         data={'name': test_project.name,
-                                                'description': test_project.description,
-                                                },
+                                            data={'name': test_project.name,
+                                                  'description': test_project.description,
+                                                  },
                                             headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)})
         response = new_project_request.json()
         if 'name' in response and 'description' in response and '_id' in response:
@@ -112,7 +113,7 @@ def projects_get_all_test(test_user: TestUser) -> (bool, int):
     print('Starting all project receiving test...')
     try:
         projects_request = requests.get('http://173.212.214.70:3004/projects',
-                                     headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)})
+                                        headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)})
         projects_list = projects_request.json()
         if isinstance(projects_list, list):
             print(f'Projects list successfully received. Found {len(projects_list)} projects.')
@@ -135,11 +136,12 @@ def run_projects_test():
         test_project.description = test_project_description_local
         if projects_create_project_test(test_user, test_project) is True:
             projects_get_by_id_test(test_user, test_project)
-            projects_update_project_test(test_user, test_project, new_name=test_project_name_local+' UPDATED',
-                                         new_description=test_project_description_local+' UPDATED')
+            projects_update_project_test(test_user, test_project, new_name=test_project_name_local + ' UPDATED',
+                                         new_description=test_project_description_local + ' UPDATED')
             projects_delete_project_test(test_user, test_project)
 
 
 if __name__ == '__main__':
     print('Running projects test directly.')
     run_projects_test()
+    delete_test_records()

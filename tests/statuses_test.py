@@ -1,9 +1,9 @@
 import requests
 
+from delete_records import delete_test_records
 from tests.auth_test import TestUser, get_tester_user_authorized_for_other_test
-from tests.boards_test import Board, boards_get_all_test, boards_delete_board_test, boards_create_board_test
-from tests.projects_test import Project, projects_create_project_test, projects_get_all_test, \
-    projects_delete_project_test
+from tests.boards_test import Board, boards_get_all_test, boards_create_board_test
+from tests.projects_test import Project, projects_create_project_test
 
 test_status_name_local = 'This is autotest generated status'
 test_project = Project()
@@ -21,7 +21,7 @@ def statuses_delete_status_test(test_user, test_status: Status) -> bool:
     response = {}
     try:
         status_delete_info = requests.delete(f'http://173.212.214.70:3004/boards/delete/{test_status.id}',
-                                         headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)})
+                                             headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)})
         response = status_delete_info.json()
         if 'success' in response:
             if response['success'] is True:
@@ -45,11 +45,11 @@ def statuses_update_status_test(test_user, test_status, new_name: str, new_board
         for boards in test_status.boards:
             ids_list.append(boards.id)
         status_new_info = requests.put(f'http://173.212.214.70:3004/statuses/update/{test_status.id}',
-                                         headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)},
-                                        data={
-                                            'name': new_name,
-                                            'boardIds': ids_list
-                                        })
+                                       headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)},
+                                       data={
+                                           'name': new_name,
+                                           'boardIds': ids_list
+                                       })
         response = status_new_info.json()
         if 'name' in response and 'boardIds' in response and '_id' in response:
             if response['name'] == new_name \
@@ -76,13 +76,13 @@ def statuses_get_by_id_test(test_user: TestUser, test_status: Status) -> bool:
         for boards in test_status.boards:
             ids_list.append(boards.id)
         status_info = requests.get(f'http://173.212.214.70:3004/statuses/{test_status.id}',
-                                         headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)})
+                                   headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)})
         response = status_info.json()
         if 'name' in response and 'boardIds' in response and '_id' in response:
             if response['name'] == test_status.name \
                     and response['boardIds'] == ids_list \
                     and response['_id'] == test_status.id:
-                print('Test status successfully receieved by ID.')
+                print('Test status successfully received by ID.')
                 return True
             else:
                 raise 'Wrong record received.'
@@ -101,10 +101,10 @@ def statuses_create_status_test(test_user: TestUser, test_status: Status) -> boo
         for boards in test_status.boards:
             ids_list.append(boards.id)
         new_status_request = requests.post('http://173.212.214.70:3004/statuses/create',
-                                         data={'name': test_status.name,
-                                                'boardIds': ids_list,
-                                                },
-                                            headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)})
+                                           data={'name': test_status.name,
+                                                 'boardIds': ids_list,
+                                                 },
+                                           headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)})
         response = new_status_request.json()
         if 'name' in response and 'boardIds' in response and '_id' in response:
             if response['name'] == test_status.name and response['boardIds'] == ids_list:
@@ -124,7 +124,7 @@ def statuses_get_all_test(test_user: TestUser) -> (bool, int):
     print('Starting all statuses receiving test...')
     try:
         statuses_request = requests.get('http://173.212.214.70:3004/statuses',
-                                     headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)})
+                                        headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)})
         statuses_list = statuses_request.json()
         if isinstance(statuses_list, list):
             print(f'Statuses list successfully received. Found {len(statuses_list)} statuses.')
@@ -137,7 +137,7 @@ def statuses_get_all_test(test_user: TestUser) -> (bool, int):
         exit()
 
 
-def check_or_create_test_boards(test_user: TestUser, needed:int) -> ([Board], bool):
+def check_or_create_test_boards(test_user: TestUser, needed: int) -> ([Board], bool):
     test_boards = []
     is_all_boards_got, items = boards_get_all_test(test_user)
     if items < needed:
@@ -158,7 +158,7 @@ def check_or_create_test_boards(test_user: TestUser, needed:int) -> ([Board], bo
         try:
             print('Fetching three existing boards. If anything will go wrong - run boards test.')
             boards_get = requests.get('http://173.212.214.70:3004/boards',
-                                        headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)})
+                                      headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)})
             response = boards_get.json()
             for times in range(needed):
                 new_board = Board()
@@ -185,16 +185,12 @@ def run_statuses_test():
         test_status.boards = [test_boards[0], test_boards[1]]
         if statuses_create_status_test(test_user, test_status) is True:
             statuses_get_by_id_test(test_user, test_status)
-            statuses_update_status_test(test_user, test_status, new_name=test_status_name_local+' UPDATED',
+            statuses_update_status_test(test_user, test_status, new_name=test_status_name_local + ' UPDATED',
                                         new_boards=[test_boards[1], test_boards[2]])
             statuses_delete_status_test(test_user, test_status)
-        if found is False:
-            for board in test_boards:
-                boards_delete_board_test(test_user, board)
-        if test_project.id != '':
-            projects_delete_project_test(test_user, test_project)
 
 
 if __name__ == '__main__':
     print('Running statuses test directly.')
     run_statuses_test()
+    delete_test_records()
