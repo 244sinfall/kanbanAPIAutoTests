@@ -126,12 +126,12 @@ def boards_get_all_test(test_user: TestUser) -> (bool, int):
         exit()
 
 
-def check_or_create_test_projects(test_user: TestUser) -> ([Project], True):
+def check_or_create_test_projects(test_user: TestUser, needed:int) -> ([Project], bool):
     test_projects = []
     is_all_project_got, items = projects_get_all_test(test_user)
-    if items < 2:
-        print('You need at least 2 projects to test boards. We are going to create them')
-        for times in range(2):
+    if items < needed:
+        print(f'You need at least {needed} projects for test. We are going to create them')
+        for times in range(needed):
             new_project = Project()
             new_project.name = f'This is autotest generated project #{times}'
             new_project.description = 'If you see this, please report dimafilin6@icloud.com'
@@ -145,7 +145,7 @@ def check_or_create_test_projects(test_user: TestUser) -> ([Project], True):
             projects_get = requests.get('http://173.212.214.70:3004/projects',
                                         headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)})
             response = projects_get.json()
-            for times in range(2):
+            for times in range(needed):
                 new_project = Project()
                 new_project.id = response[times]['_id']
                 new_project.name = response[times]['name']
@@ -165,7 +165,7 @@ def run_boards_test():
     if is_all_boards_got is True:
         test_board = Board()
         test_board.name = test_board_name_local
-        test_projects, found = check_or_create_test_projects(test_user)
+        test_projects, found = check_or_create_test_projects(test_user, 2)
         test_board.project = test_projects[0]
         if boards_create_board_test(test_user, test_board) is True:
             boards_get_by_id_test(test_user, test_board)

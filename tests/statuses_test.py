@@ -137,16 +137,16 @@ def statuses_get_all_test(test_user: TestUser) -> (bool, int):
         exit()
 
 
-def check_or_create_test_boards(test_user: TestUser) -> ([Board], bool):
+def check_or_create_test_boards(test_user: TestUser, needed:int) -> ([Board], bool):
     test_boards = []
     is_all_boards_got, items = boards_get_all_test(test_user)
-    if items < 3:
-        print('You need at least 3 boards to test statuses. We are going to create them')
+    if items < needed:
+        print(f'You need at least {needed} boards for test. We are going to create them')
         print('Creating project for the future test. If anything will go wrong - run project test.')
         test_project.name = 'This is statuses autotest generated project.'
         test_project.description = 'It should be removed asap, if not, contact: dimafilin6@icloud.com'
         projects_create_project_test(test_user, test_project)
-        for times in range(3):
+        for times in range(needed):
             new_board = Board()
             new_board.name = f'This is autotest generated project #{times}'
             new_board.project = test_project
@@ -160,7 +160,7 @@ def check_or_create_test_boards(test_user: TestUser) -> ([Board], bool):
             boards_get = requests.get('http://173.212.214.70:3004/boards',
                                         headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)})
             response = boards_get.json()
-            for times in range(3):
+            for times in range(needed):
                 new_board = Board()
                 new_board.id = response[times]['_id']
                 new_board.name = response[times]['name']
@@ -181,7 +181,7 @@ def run_statuses_test():
     if is_all_statuses_got is True:
         test_status = Status()
         test_status.name = test_status_name_local
-        test_boards, found = check_or_create_test_boards(test_user)
+        test_boards, found = check_or_create_test_boards(test_user, 3)
         test_status.boards = [test_boards[0], test_boards[1]]
         if statuses_create_status_test(test_user, test_status) is True:
             statuses_get_by_id_test(test_user, test_status)
