@@ -141,4 +141,5 @@ def run_projects_test():
 
 
 if __name__ == '__main__':
+    print('Running projects test directly.')
     run_projects_test()

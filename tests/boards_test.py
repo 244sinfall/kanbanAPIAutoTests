@@ -1,7 +1,8 @@
 import requests
 
 from tests.auth_test import TestUser, get_tester_user_authorized_for_other_test
-from tests.projects_test import Project, projects_create_project_test, projects_get_all_test
+from tests.projects_test import Project, projects_create_project_test, projects_get_all_test, \
+    projects_delete_project_test
 
 test_board_name_local = 'This is autotest generated board'
 
@@ -48,7 +49,7 @@ def boards_update_board_test(test_user, test_board, new_name: str, new_project: 
         if 'name' in response and 'projectId' in response and '_id' in response:
             if response['name'] == new_name \
                     and response['projectId'] == new_project.id \
-                    and response['_id'] == test_user.id:
+                    and response['_id'] == test_board0.id:
                 test_board.name = response['name']
                 test_board.project = new_project
                 print('Test board successfully updated.')
@@ -125,48 +126,56 @@ def boards_get_all_test(test_user: TestUser) -> (bool, int):
         exit()
 
 
+def check_or_create_test_projects(test_user: TestUser) -> ([Project], True):
+    test_projects = []
+    is_all_project_got, items = projects_get_all_test(test_user)
+    if items < 2:
+        print('You need at least 2 projects to test boards. We are going to create them')
+        for times in range(2):
+            new_project = Project()
+            new_project.name = f'This is autotest generated project #{times}'
+            new_project.description = 'If you see this, please report dimafilin6@icloud.com'
+            projects_create_project_test(test_user, new_project)
+            test_projects.append(new_project)
+        return test_projects, False
+    else:
+        response = {}
+        try:
+            print('Fetching two existing projects. If anything will go wrong - run projects test.')
+            projects_get = requests.get('http://173.212.214.70:3004/projects',
+                                        headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)})
+            response = projects_get.json()
+            for times in range(2):
+                new_project = Project()
+                new_project.id = response[times]['_id']
+                new_project.name = response[times]['name']
+                new_project.description = response[times]['description']
+                print(f'{times + 1}: {new_project.id}')
+                test_projects.append(new_project)
+            return test_projects, True
+        except BaseException as e:
+            print(f'ERROR while fetching projects. Error: {e}, Response: {response}')
+            exit()
+
+
 def run_boards_test():
     print('Running board tests...')
     test_user = get_tester_user_authorized_for_other_test('dimafilin6@icloud.com', '12345678')
-    created_new_projects = False
-    test_projects = []
     is_all_boards_got, items = boards_get_all_test(test_user)
     if is_all_boards_got is True:
         test_board = Board()
         test_board.name = test_board_name_local
-        is_all_project_got, items = projects_get_all_test(test_user)
-        if items < 2:
-            print('You need at least 2 projects to test boards. We are going to create them')
-            for times in range(2):
-                new_project = Project()
-                new_project.name = f'This is autotest generated project #{times}'
-                new_project.description = 'If you see this, please report dimafilin6@icloud.com'
-                projects_create_project_test(test_user, new_project)
-                test_projects.append(new_project)
-        else:
-            response = {}
-            try:
-                print('Fetching two existing projects. If anything will go wrong - run projects test.')
-                projects_get = requests.get('http://173.212.214.70:3004/projects',
-                                            headers={'Authorization': 'Bearer {}'.format(test_user.accessToken)})
-                response = projects_get.json()
-                for times in range(2):
-                    new_project = Project()
-                    new_project.id = response[times]['_id']
-                    new_project.name = response[times]['name']
-                    new_project.description = response[times]['description']
-                    print(f'{times+1}: {new_project.id}')
-                    test_projects.append(new_project)
-
-            except BaseException as e:
-                print(f'ERROR while fetching projects. Error: {e}, Response: {response}')
-                exit()
+        test_projects, found = check_or_create_test_projects(test_user)
         test_board.project = test_projects[0]
         if boards_create_board_test(test_user, test_board) is True:
             boards_get_by_id_test(test_user, test_board)
             boards_update_board_test(test_user, test_board, new_name=test_board_name_local+' UPDATED', new_project=test_projects[1])
             boards_delete_board_test(test_user, test_board)
+        if found is False:
+            for project in test_projects:
+                projects_delete_project_test(test_user, project)
 
 
 if __name__ == '__main__':
+    print('Running boards test directly.')
     run_boards_test()

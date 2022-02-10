@@ -182,9 +182,8 @@ def run_auth_tests():
             auth_refresh_test(test_user)
             auth_log_out_test(test_user)
             emergency_test_user_delete(test_user)
-    # auth_refresh_test()
-    # auth_log_out_test()
 
 
 if __name__ == '__main__':
+    print('Running auth test directly.')
     run_auth_tests()
